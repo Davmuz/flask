@@ -174,7 +174,7 @@ class Flask(_PackageBoundObject):
     #: .. versionadded:: 0.3
     debug_log_format = (
         '-' * 80 + '\n' +
-        '%(levelname)s in %(pathname)s:%(lineno)d:\n' +
+        '%(levelname)s in %(module)s [%(pathname)s:%(lineno)d]:\n' +
         '%(message)s\n' +
         '-' * 80
     )
@@ -666,12 +666,18 @@ class Flask(_PackageBoundObject):
             if req.routing_exception is not None:
                 raise req.routing_exception
             rule = req.url_rule
+            
             # if we provide automatic options for this URL and the
             # request came with the OPTIONS method, reply automatically 
-            if rule.provide_automatic_options and req.method == 'OPTIONS':
+            if req.method == 'OPTIONS':
                 return self.make_default_options_response()
             # otherwise dispatch to the handler for that endpoint
-            return self.view_functions[rule.endpoint](**req.view_args)
+            if callable(rule.endpoint):
+                return rule.endpoint(**req.view_args)
+            else:
+                if rule.endpoint not in self.view_functions: # cache
+                    self.view_functions[rule.endpoint] = import_string(rule.endpoint)
+                return self.view_functions[rule.endpoint](**req.view_args)
         except HTTPException, e:
             return self.handle_http_exception(e)
 
