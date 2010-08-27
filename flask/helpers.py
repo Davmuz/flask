@@ -166,14 +166,7 @@ def url_for(endpoint, **values):
     :param values: the variable arguments of the URL rule
     :param _external: if set to `True`, an absolute URL is generated.
     """
-    #TODO: remove the module dependance.
     ctx = _request_ctx_stack.top
-    if '.' not in endpoint:
-        mod = ctx.request.module
-        if mod is not None:
-            endpoint = mod + '.' + endpoint
-    elif endpoint.startswith('.'):
-        endpoint = endpoint[1:]
     external = values.pop('_external', False)
     return ctx.url_adapter.build(endpoint, values, force_external=external)
 
