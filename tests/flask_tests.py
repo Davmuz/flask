@@ -663,183 +663,6 @@ class TemplatingTestCase(unittest.TestCase):
         assert rv.data == 'dcba'
 
 
-class ModuleTestCase(unittest.TestCase):
-
-    def test_basic_module(self):
-        app = flask.Flask(__name__)
-        admin = flask.Module(__name__, 'admin', url_prefix='/admin')
-        @admin.route('/')
-        def admin_index():
-            return 'admin index'
-        @admin.route('/login')
-        def admin_login():
-            return 'admin login'
-        @admin.route('/logout')
-        def admin_logout():
-            return 'admin logout'
-        @app.route('/')
-        def index():
-            return 'the index'
-        app.register_module(admin)
-        c = app.test_client()
-        assert c.get('/').data == 'the index'
-        assert c.get('/admin/').data == 'admin index'
-        assert c.get('/admin/login').data == 'admin login'
-        assert c.get('/admin/logout').data == 'admin logout'
-
-    def test_default_endpoint_name(self):
-        app = flask.Flask(__name__)
-        mod = flask.Module(__name__, 'frontend')
-        def index():
-            return 'Awesome'
-        mod.add_url_rule('/', view_func=index)
-        app.register_module(mod)
-        rv = app.test_client().get('/')
-        assert rv.data == 'Awesome'
-        with app.test_request_context():
-            assert flask.url_for('frontend.index') == '/'
-
-    def test_request_processing(self):
-        catched = []
-        app = flask.Flask(__name__)
-        admin = flask.Module(__name__, 'admin', url_prefix='/admin')
-        @admin.before_request
-        def before_admin_request():
-            catched.append('before-admin')
-        @admin.after_request
-        def after_admin_request(response):
-            catched.append('after-admin')
-            return response
-        @admin.route('/')
-        def admin_index():
-            return 'the admin'
-        @app.before_request
-        def before_request():
-            catched.append('before-app')
-        @app.after_request
-        def after_request(response):
-            catched.append('after-app')
-            return response
-        @app.route('/')
-        def index():
-            return 'the index'
-        app.register_module(admin)
-        c = app.test_client()
-
-        assert c.get('/').data == 'the index'
-        assert catched == ['before-app', 'after-app']
-        del catched[:]
-
-        assert c.get('/admin/').data == 'the admin'
-        assert catched == ['before-app', 'before-admin',
-                           'after-admin', 'after-app']
-
-    def test_context_processors(self):
-        app = flask.Flask(__name__)
-        admin = flask.Module(__name__, 'admin', url_prefix='/admin')
-        @app.context_processor
-        def inject_all_regualr():
-            return {'a': 1}
-        @admin.context_processor
-        def inject_admin():
-            return {'b': 2}
-        @admin.app_context_processor
-        def inject_all_module():
-            return {'c': 3}
-        @app.route('/')
-        def index():
-            return flask.render_template_string('{{ a }}{{ b }}{{ c }}')
-        @admin.route('/')
-        def admin_index():
-            return flask.render_template_string('{{ a }}{{ b }}{{ c }}')
-        app.register_module(admin)
-        c = app.test_client()
-        assert c.get('/').data == '13'
-        assert c.get('/admin/').data == '123'
-
-    def test_late_binding(self):
-        app = flask.Flask(__name__)
-        admin = flask.Module(__name__, 'admin')
-        @admin.route('/')
-        def index():
-            return '42'
-        app.register_module(admin, url_prefix='/admin')
-        assert app.test_client().get('/admin/').data == '42'
-
-    def test_error_handling(self):
-        app = flask.Flask(__name__)
-        admin = flask.Module(__name__, 'admin')
-        @admin.app_errorhandler(404)
-        def not_found(e):
-            return 'not found', 404
-        @admin.app_errorhandler(500)
-        def internal_server_error(e):
-            return 'internal server error', 500
-        @admin.route('/')
-        def index():
-            flask.abort(404)
-        @admin.route('/error')
-        def error():
-            1 // 0
-        app.register_module(admin)
-        c = app.test_client()
-        rv = c.get('/')
-        assert rv.status_code == 404
-        assert rv.data == 'not found'
-        rv = c.get('/error')
-        assert rv.status_code == 500
-        assert 'internal server error' == rv.data
-
-    def test_templates_and_static(self):
-        from moduleapp import app
-        c = app.test_client()
-
-        rv = c.get('/')
-        assert rv.data == 'Hello from the Frontend'
-        rv = c.get('/admin/')
-        assert rv.data == 'Hello from the Admin'
-        rv = c.get('/admin/index2')
-        assert rv.data == 'Hello from the Admin'
-        rv = c.get('/admin/static/test.txt')
-        assert rv.data.strip() == 'Admin File'
-        rv = c.get('/admin/static/css/test.css')
-        assert rv.data.strip() == '/* nested file */'
-
-        with app.test_request_context():
-            assert flask.url_for('admin.static', filename='test.txt') \
-                == '/admin/static/test.txt'
-
-        with app.test_request_context():
-            try:
-                flask.render_template('missing.html')
-            except TemplateNotFound, e:
-                assert e.name == 'missing.html'
-            else:
-                assert 0, 'expected exception'
-
-        with flask.Flask(__name__).test_request_context():
-            assert flask.render_template('nested/nested.txt') == 'I\'m nested'
-
-    def test_safe_access(self):
-        from moduleapp import app
-
-        with app.test_request_context():
-            f = app.view_functions['admin.static']
-
-            try:
-                f('/etc/passwd')
-            except NotFound:
-                pass
-            else:
-                assert 0, 'expected exception'
-            try:
-                f('../__init__.py')
-            except NotFound:
-                pass
-            else:
-                assert 0, 'expected exception'
-
-
 class SendfileTestCase(unittest.TestCase):
 
     def test_send_file_regular(self):
@@ -1102,15 +925,6 @@ class SubdomainTestCase(unittest.TestCase):
         rv = c.get('/', 'http://test.localhost/')
         assert rv.data == 'test index'
 
-    def test_module_static_path_subdomain(self):
-        app = flask.Flask(__name__)
-        app.config['SERVER_NAME'] = 'example.com'
-        from subdomaintestmodule import mod
-        app.register_module(mod)
-        c = app.test_client()
-        rv = c.get('/static/hello.txt', 'http://foo.example.com/')
-        assert rv.data.strip() == 'Hello Subdomain'
-
     def test_subdomain_matching(self):
         app = flask.Flask(__name__)
         app.config['SERVER_NAME'] = 'localhost'
@@ -1121,27 +935,6 @@ class SubdomainTestCase(unittest.TestCase):
         c = app.test_client()
         rv = c.get('/', 'http://mitsuhiko.localhost/')
         assert rv.data == 'index for mitsuhiko'
-
-    def test_module_subdomain_support(self):
-        app = flask.Flask(__name__)
-        mod = flask.Module(__name__, 'test', subdomain='testing')
-        app.config['SERVER_NAME'] = 'localhost'
-
-        @mod.route('/test')
-        def test():
-            return 'Test'
-
-        @mod.route('/outside', subdomain='xtesting')
-        def bar():
-            return 'Outside'
-
-        app.register_module(mod)
-
-        c = app.test_client()
-        rv = c.get('/test', 'http://testing.localhost/')
-        assert rv.data == 'Test'
-        rv = c.get('/outside', 'http://xtesting.localhost/')
-        assert rv.data == 'Outside'
 
 
 class TestSignals(unittest.TestCase):
@@ -1234,7 +1027,6 @@ def suite():
     suite.addTest(unittest.makeSuite(ContextTestCase))
     suite.addTest(unittest.makeSuite(BasicFunctionalityTestCase))
     suite.addTest(unittest.makeSuite(TemplatingTestCase))
-    suite.addTest(unittest.makeSuite(ModuleTestCase))
     suite.addTest(unittest.makeSuite(SendfileTestCase))
     suite.addTest(unittest.makeSuite(LoggingTestCase))
     suite.addTest(unittest.makeSuite(ConfigTestCase))

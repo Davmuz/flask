@@ -29,8 +29,7 @@ def _default_template_ctx_processor():
 
 
 class _DispatchingJinjaLoader(BaseLoader):
-    """A loader that looks for templates in the application and all
-    the module folders.
+    """A loader that looks for templates in all the given folders.
     """
 
     def __init__(self, app):
@@ -41,11 +40,6 @@ class _DispatchingJinjaLoader(BaseLoader):
         if template.startswith('../'):
             raise TemplateNotFound(template)
         loader = None
-        try:
-            module, name = template.split('/', 1)
-            loader = self.app.modules[module].jinja_loader
-        except (ValueError, KeyError):
-            pass
         # if there was a module and it has a loader, try this first
         if loader is not None:
             try:

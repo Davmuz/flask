@@ -59,12 +59,6 @@ class Request(RequestBase):
         if self.url_rule is not None:
             return self.url_rule.endpoint
 
-    @property
-    def module(self):
-        """The name of the current module"""
-        if self.url_rule and '.' in self.url_rule.endpoint:
-            return self.url_rule.endpoint.rsplit('.', 1)[0]
-
     @cached_property
     def json(self):
         """If the mimetype is `application/json` this will contain the

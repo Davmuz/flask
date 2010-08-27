@@ -3,6 +3,11 @@ Flask Changelog
 
 Here you can see the full list of changes between each Flask release.
 
+Fork
+----
+
+- Removed modules.
+
 Version 0.7
 -----------
 

@@ -144,19 +144,18 @@ def make_response(*args):
 
 def url_for(endpoint, **values):
     """Generates a URL to the given endpoint with the method provided.
-    The endpoint is relative to the active module if modules are in use.
 
     Here are some examples:
 
-    ==================== ======================= =============================
-    Active Module        Target Endpoint         Target Function
-    ==================== ======================= =============================
-    `None`               ``'index'``             `index` of the application
-    `None`               ``'.index'``            `index` of the application
-    ``'admin'``          ``'index'``             `index` of the `admin` module
-    any                  ``'.index'``            `index` of the application
-    any                  ``'admin.index'``       `index` of the `admin` module
-    ==================== ======================= =============================
+    ======================= =============================
+    Target Endpoint         Target Function
+    ======================= =============================
+    ``'index'``             `index` of the application
+    ``'.index'``            `index` of the application
+    ``'index'``             `index` of the `admin` module
+    ``'.index'``            `index` of the application
+    ``'admin.index'``       `index` of the `admin` module
+    ======================= =============================
 
     Variable arguments that are unknown to the target endpoint are appended
     to the generated URL as query arguments.
@@ -167,6 +166,7 @@ def url_for(endpoint, **values):
     :param values: the variable arguments of the URL rule
     :param _external: if set to `True`, an absolute URL is generated.
     """
+    #TODO: remove the module dependance.
     ctx = _request_ctx_stack.top
     if '.' not in endpoint:
         mod = ctx.request.module

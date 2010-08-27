@@ -29,7 +29,6 @@ from .config import ConfigAttribute, Config
 from .ctx import _RequestContext
 from .globals import _request_ctx_stack, request
 from .session import Session, _NullSession
-from .module import _ModuleSetupState
 from .templating import _DispatchingJinjaLoader, \
     _default_template_ctx_processor
 from .signals import request_started, request_finished, got_request_exception
@@ -175,7 +174,7 @@ class Flask(_PackageBoundObject):
     #: .. versionadded:: 0.3
     debug_log_format = (
         '-' * 80 + '\n' +
-        '%(levelname)s in %(module)s [%(pathname)s:%(lineno)d]:\n' +
+        '%(levelname)s in %(pathname)s:%(lineno)d:\n' +
         '%(message)s\n' +
         '-' * 80
     )
@@ -250,11 +249,6 @@ class Flask(_PackageBoundObject):
         self.template_context_processors = {
             None: [_default_template_ctx_processor]
         }
-
-        #: all the loaded modules in a dictionary by name.
-        #:
-        #: .. versionadded:: 0.5
-        self.modules = {}
 
         #: The :class:`~werkzeug.routing.Map` for this instance.  You can use
         #: this to change the routing converters after the class was created
@@ -355,9 +349,6 @@ class Flask(_PackageBoundObject):
                         to add extra variables.
         """
         funcs = self.template_context_processors[None]
-        mod = _request_ctx_stack.top.request.module
-        if mod is not None and mod in self.template_context_processors:
-            funcs = chain(funcs, self.template_context_processors[mod])
         orig_ctx = context.copy()
         for func in funcs:
             context.update(func())
@@ -446,18 +437,6 @@ class Flask(_PackageBoundObject):
             domain = '.' + self.config['SERVER_NAME']
         session.save_cookie(response, self.session_cookie_name,
                             expires=expires, httponly=True, domain=domain)
-
-    def register_module(self, module, **options):
-        """Registers a module with this application.  The keyword argument
-        of this function are the same as the ones for the constructor of the
-        :class:`Module` class and will override the values of the module if
-        provided.
-        """
-        options.setdefault('url_prefix', module.url_prefix)
-        options.setdefault('subdomain', module.subdomain)
-        state = _ModuleSetupState(self, **options)
-        for func in module._register_events:
-            func(state)
 
     def add_url_rule(self, rule, endpoint=None, view_func=None, **options):
         """Connects a URL rule.  Works exactly like the :meth:`route`
@@ -768,9 +747,6 @@ class Flask(_PackageBoundObject):
         request handling is stopped.
         """
         funcs = self.before_request_funcs.get(None, ())
-        mod = request.module
-        if mod and mod in self.before_request_funcs:
-            funcs = chain(funcs, self.before_request_funcs[mod])
         for func in funcs:
             rv = func()
             if rv is not None:
@@ -790,12 +766,9 @@ class Flask(_PackageBoundObject):
                  instance of :attr:`response_class`.
         """
         ctx = _request_ctx_stack.top
-        mod = ctx.request.module
         if not isinstance(ctx.session, _NullSession):
             self.save_session(ctx.session, response)
         funcs = ()
-        if mod and mod in self.after_request_funcs:
-            funcs = reversed(self.after_request_funcs[mod])
         if None in self.after_request_funcs:
             funcs = chain(funcs, reversed(self.after_request_funcs[None]))
         for handler in funcs:
