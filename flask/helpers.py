@@ -429,6 +429,18 @@ class _PackageBoundObject(object):
 
         #: Where is the app root located?
         self.root_path = _get_package_path(self.import_name)
+        
+        #: Where is the static directory located?
+        self.static_root = 'static'
+        
+    def get_static_root(self):
+        """Generate the path to the static directory.
+        If the path is 
+        """
+        if os.path.isabs(self.static_root):
+            return self.static_root
+        else:
+            return os.path.join(self.root_path, self.static_root)
 
     @property
     def has_static_folder(self):
@@ -437,7 +449,7 @@ class _PackageBoundObject(object):
 
         .. versionadded:: 0.5
         """
-        return os.path.isdir(os.path.join(self.root_path, 'static'))
+        return os.path.isdir(self.get_static_root())
 
     @cached_property
     def jinja_loader(self):
@@ -453,8 +465,7 @@ class _PackageBoundObject(object):
 
         .. versionadded:: 0.5
         """
-        return send_from_directory(os.path.join(self.root_path, 'static'),
-                                   filename)
+        return send_from_directory(self.get_static_root(), filename)
 
     def open_resource(self, resource):
         """Opens a resource from the application's resource folder.  To see
