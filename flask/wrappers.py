@@ -10,7 +10,8 @@
 """
 
 from werkzeug import Request as RequestBase, Response as ResponseBase, \
-    cached_property
+    cached_property, import_string
+from werkzeug.routing import Rule as RuleBase
 
 from .helpers import json, _assert_have_json
 from .globals import _request_ctx_stack
@@ -35,7 +36,6 @@ class Request(RequestBase):
     #: a dict of view arguments that matched the request.  If an exception
     #: happened when matching, this will be `None`.
     view_args = None
-
     #: if matching the URL failed, this is the exception that will be
     #: raised / was raised as part of the request handling.  This is
     #: usually a :exc:`~werkzeug.exceptions.NotFound` exception or
@@ -80,3 +80,45 @@ class Response(ResponseBase):
     set :attr:`~flask.Flask.response_class` to your subclass.
     """
     default_mimetype = 'text/html'
+
+
+class Rule(RuleBase):
+    """Extends Werkzeug routing to support the OPTIONS method and set the view
+    function.
+    """
+    def __init__(self, *args, **kwargs):
+        """
+        :param view_func: a view function.
+        """
+        # Setup OPTIONS parameter
+        methods = kwargs.pop('methods', ('GET',))
+        provide_automatic_options = False
+        if 'OPTIONS' not in methods:
+            methods = tuple(methods) + ('OPTIONS',)
+            provide_automatic_options = True
+        kwargs['methods'] = methods
+        self.provide_automatic_options = provide_automatic_options
+        
+        # Set the view function
+        endpoint = kwargs.get('endpoint', None)
+        view_func = kwargs.pop('view_func', None)
+        if not view_func:
+            if callable(endpoint):
+                view_func = endpoint
+                endpoint = endpoint.__name__
+            elif type(endpoint) is str:
+                view_func = import_string(endpoint)
+        
+        self.view_func = view_func
+        kwargs['endpoint'] = endpoint
+        RuleBase.__init__(self, *args, **kwargs)
+        
+    def empty(self):
+        """Return an unbound copy of this rule.  This can be useful if you
+        want to reuse an already bound URL for another map."""
+        defaults = None
+        if self.defaults is not None:
+            defaults = dict(self.defaults)
+        return Rule(self.rule, defaults, self.subdomain, self.methods,
+                    self.build_only, self.endpoint, self.strict_slashes,
+                    self.redirect_to, view_func=self.view_func)

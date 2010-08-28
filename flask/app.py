@@ -17,14 +17,14 @@ from itertools import chain
 
 from jinja2 import Environment
 
-from werkzeug import ImmutableDict
-from werkzeug.routing import Map, Rule
+from werkzeug import ImmutableDict, import_string
+from werkzeug.routing import Map
 from werkzeug.exceptions import HTTPException, InternalServerError, \
      MethodNotAllowed
 
 from .helpers import _PackageBoundObject, url_for, get_flashed_messages, \
     _tojson_filter, _endpoint_from_view_func
-from .wrappers import Request, Response
+from .wrappers import Request, Response, Rule
 from .config import ConfigAttribute, Config
 from .ctx import _RequestContext
 from .globals import _request_ctx_stack, request
@@ -272,9 +272,8 @@ class Flask(_PackageBoundObject):
         # while the server is running (usually happens during development)
         # but also because google appengine stores static files somewhere
         # else when mapped with the .yml file.
-        self.add_url_rule(self.static_path + '/<path:filename>',
-                          endpoint='static',
-                          view_func=self.send_static_file)
+        self.url_map.add(Rule(self.static_path + '/<path:filename>',
+                          endpoint=self.send_static_file))
 
         #: The Jinja2 environment.  It is created from the
         #: :attr:`jinja_options`.
@@ -437,64 +436,7 @@ class Flask(_PackageBoundObject):
             domain = '.' + self.config['SERVER_NAME']
         session.save_cookie(response, self.session_cookie_name,
                             expires=expires, httponly=True, domain=domain)
-
-    def add_url_rule(self, rule, endpoint=None, view_func=None, **options):
-        """Connects a URL rule.  Works exactly like the :meth:`route`
-        decorator.  If a view_func is provided it will be registered with the
-        endpoint.
-
-        Basically this example::
-
-            @app.route('/')
-            def index():
-                pass
-
-        Is equivalent to the following::
-
-            def index():
-                pass
-            app.add_url_rule('/', 'index', index)
-
-        If the view_func is not provided you will need to connect the endpoint
-        to a view function like so::
-
-            app.view_functions['index'] = index
-
-        .. versionchanged:: 0.2
-           `view_func` parameter added.
-
-        .. versionchanged:: 0.6
-           `OPTIONS` is added automatically as method.
-
-        :param rule: the URL rule as string
-        :param endpoint: the endpoint for the registered URL rule.  Flask
-                         itself assumes the name of the view function as
-                         endpoint
-        :param view_func: the function to call when serving a request to the
-                          provided endpoint
-        :param options: the options to be forwarded to the underlying
-                        :class:`~werkzeug.routing.Rule` object.  A change
-                        to Werkzeug is handling of method options.  methods
-                        is a list of methods this rule should be limited
-                        to (`GET`, `POST` etc.).  By default a rule
-                        just listens for `GET` (and implicitly `HEAD`).
-                        Starting with Flask 0.6, `OPTIONS` is implicitly
-                        added and handled by the standard request handling.
-        """
-        if endpoint is None:
-            endpoint = _endpoint_from_view_func(view_func)
-        options['endpoint'] = endpoint
-        methods = options.pop('methods', ('GET',))
-        provide_automatic_options = False
-        if 'OPTIONS' not in methods:
-            methods = tuple(methods) + ('OPTIONS',)
-            provide_automatic_options = True
-        rule = Rule(rule, methods=methods, **options)
-        rule.provide_automatic_options = provide_automatic_options
-        self.url_map.add(rule)
-        if view_func is not None:
-            self.view_functions[endpoint] = view_func
-
+        
     def route(self, rule, **options):
         """A decorator that is used to register a view function for a
         given URL rule.  Example::
@@ -562,9 +504,10 @@ class Flask(_PackageBoundObject):
         :param options: other options to be forwarded to the underlying
                         :class:`~werkzeug.routing.Rule` object.
         """
-        def decorator(f):
-            self.add_url_rule(rule, None, f, **options)
-            return f
+        def decorator(function):
+            options['endpoint'] = function
+            self.url_map.add(Rule(rule, **options))
+            return function
         return decorator
 
     def errorhandler(self, code):
@@ -672,12 +615,13 @@ class Flask(_PackageBoundObject):
             if req.method == 'OPTIONS':
                 return self.make_default_options_response()
             # otherwise dispatch to the handler for that endpoint
-            if callable(rule.endpoint):
-                return rule.endpoint(**req.view_args)
-            else:
-                if rule.endpoint not in self.view_functions: # cache
-                    self.view_functions[rule.endpoint] = import_string(rule.endpoint)
-                return self.view_functions[rule.endpoint](**req.view_args)
+            return rule.view_func(**req.view_args)
+            #if callable(rule.endpoint):
+                #return rule.endpoint(**req.view_args)
+            #else:
+                #if rule.endpoint not in self.view_functions: # cache
+                    #self.view_functions[rule.endpoint] = import_string(rule.endpoint)
+                #return self.view_functions[rule.endpoint](**req.view_args)
         except HTTPException, e:
             return self.handle_http_exception(e)
 

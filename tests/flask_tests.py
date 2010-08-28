@@ -179,8 +179,9 @@ class BasicFunctionalityTestCase(unittest.TestCase):
         def more():
             return flask.request.method
 
-        app.add_url_rule('/', 'index', index)
-        app.add_url_rule('/more', 'more', more, methods=['GET', 'POST'])
+        app.url_map.add(flask.Rule('/', endpoint=index))
+        app.url_map.add(flask.Rule('/more', endpoint=more, \
+            methods=['GET', 'POST']))
 
         c = app.test_client()
         assert c.get('/').data == 'GET'
