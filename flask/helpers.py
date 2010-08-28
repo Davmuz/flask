@@ -74,7 +74,7 @@ def jsonify(*args, **kwargs):
 
     Example usage::
 
-        @app.route('/_get_current_user')
+        @app.url_map.route('/_get_current_user')
         def get_current_user():
             return jsonify(username=g.user.username,
                            email=g.user.email,
@@ -383,7 +383,7 @@ def send_from_directory(directory, filename, **options):
 
     Example usage::
 
-        @app.route('/uploads/<path:filename>')
+        @app.url_map.route('/uploads/<path:filename>')
         def download_file(filename):
             return send_from_directory(app.config['UPLOAD_FOLDER'],
                                        filename, as_attachment=True)

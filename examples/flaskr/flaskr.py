@@ -54,14 +54,14 @@ def after_request(response):
     return response
 
 
-@app.route('/')
+@app.url_map.route('/')
 def show_entries():
     cur = g.db.execute('select title, text from entries order by id desc')
     entries = [dict(title=row[0], text=row[1]) for row in cur.fetchall()]
     return render_template('show_entries.html', entries=entries)
 
 
-@app.route('/add', methods=['POST'])
+@app.url_map.route('/add', methods=['POST'])
 def add_entry():
     if not session.get('logged_in'):
         abort(401)
@@ -72,7 +72,7 @@ def add_entry():
     return redirect(url_for('show_entries'))
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.url_map.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
     if request.method == 'POST':
@@ -87,7 +87,7 @@ def login():
     return render_template('login.html', error=error)
 
 
-@app.route('/logout')
+@app.url_map.route('/logout')
 def logout():
     session.pop('logged_in', None)
     flash('You were logged out')

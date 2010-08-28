@@ -66,10 +66,10 @@ class ContextTestCase(unittest.TestCase):
 
     def test_context_binding(self):
         app = flask.Flask(__name__)
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             return 'Hello %s!' % flask.request.args['name']
-        @app.route('/meh')
+        @app.url_map.route('/meh')
         def meh():
             return flask.request.url
 
@@ -81,7 +81,7 @@ class ContextTestCase(unittest.TestCase):
 
     def test_manual_context_binding(self):
         app = flask.Flask(__name__)
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             return 'Hello %s!' % flask.request.args['name']
 
@@ -98,12 +98,12 @@ class ContextTestCase(unittest.TestCase):
 
     def test_test_client_context_binding(self):
         app = flask.Flask(__name__)
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             flask.g.value = 42
             return 'Hello World!'
 
-        @app.route('/other')
+        @app.url_map.route('/other')
         def other():
             1/0
 
@@ -131,7 +131,7 @@ class BasicFunctionalityTestCase(unittest.TestCase):
 
     def test_options_work(self):
         app = flask.Flask(__name__)
-        @app.route('/', methods=['GET', 'POST'])
+        @app.url_map.route('/', methods=['GET', 'POST'])
         def index():
             return 'Hello World'
         rv = app.test_client().open('/', method='OPTIONS')
@@ -140,10 +140,10 @@ class BasicFunctionalityTestCase(unittest.TestCase):
 
     def test_options_on_multiple_rules(self):
         app = flask.Flask(__name__)
-        @app.route('/', methods=['GET', 'POST'])
+        @app.url_map.route('/', methods=['GET', 'POST'])
         def index():
             return 'Hello World'
-        @app.route('/', methods=['PUT'])
+        @app.url_map.route('/', methods=['PUT'])
         def index_put():
             return 'Aha!'
         rv = app.test_client().open('/', method='OPTIONS')
@@ -151,10 +151,10 @@ class BasicFunctionalityTestCase(unittest.TestCase):
 
     def test_request_dispatching(self):
         app = flask.Flask(__name__)
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             return flask.request.method
-        @app.route('/more', methods=['GET', 'POST'])
+        @app.url_map.route('/more', methods=['GET', 'POST'])
         def more():
             return flask.request.method
 
@@ -200,11 +200,11 @@ class BasicFunctionalityTestCase(unittest.TestCase):
     def test_session(self):
         app = flask.Flask(__name__)
         app.secret_key = 'testkey'
-        @app.route('/set', methods=['POST'])
+        @app.url_map.route('/set', methods=['POST'])
         def set():
             flask.session['value'] = flask.request.form['value']
             return 'value set'
-        @app.route('/get')
+        @app.url_map.route('/get')
         def get():
             return flask.session['value']
 
@@ -218,7 +218,7 @@ class BasicFunctionalityTestCase(unittest.TestCase):
             SECRET_KEY='foo',
             SERVER_NAME='example.com'
         )
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             flask.session['testing'] = 42
             return 'Hello World'
@@ -244,13 +244,13 @@ class BasicFunctionalityTestCase(unittest.TestCase):
         permanent = True
         app = flask.Flask(__name__)
         app.secret_key = 'testkey'
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             flask.session['test'] = 42
             flask.session.permanent = permanent
             return ''
 
-        @app.route('/test')
+        @app.url_map.route('/test')
         def test():
             return unicode(flask.session.permanent)
 
@@ -289,14 +289,14 @@ class BasicFunctionalityTestCase(unittest.TestCase):
         app = flask.Flask(__name__)
         app.secret_key = 'testkey'
 
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             flask.flash(u'Hello World')
             flask.flash(u'Hello World', 'error')
             flask.flash(flask.Markup(u'<em>Testing</em>'), 'warning')
             return ''
 
-        @app.route('/test')
+        @app.url_map.route('/test')
         def test():
             messages = flask.get_flashed_messages(with_categories=True)
             assert len(messages) == 3
@@ -325,7 +325,7 @@ class BasicFunctionalityTestCase(unittest.TestCase):
             response.data += '|after'
             evts.append('after')
             return response
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             assert 'before' in evts
             assert 'after' not in evts
@@ -342,7 +342,7 @@ class BasicFunctionalityTestCase(unittest.TestCase):
         def after_request(response):
             called.append(True)
             return response
-        @app.route('/')
+        @app.url_map.route('/')
         def fails():
             1/0
         rv = app.test_client().get('/')
@@ -358,7 +358,7 @@ class BasicFunctionalityTestCase(unittest.TestCase):
             called.append(True)
             1/0
             return response
-        @app.route('/')
+        @app.url_map.route('/')
         def fails():
             1/0
         rv = app.test_client().get('/')
@@ -383,7 +383,7 @@ class BasicFunctionalityTestCase(unittest.TestCase):
         def after2(response):
             called.append(3)
             return response
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             return '42'
         rv = app.test_client().get('/')
@@ -398,10 +398,10 @@ class BasicFunctionalityTestCase(unittest.TestCase):
         @app.errorhandler(500)
         def internal_server_error(e):
             return 'internal server error', 500
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             flask.abort(404)
-        @app.route('/error')
+        @app.url_map.route('/error')
         def error():
             1 // 0
         c = app.test_client()
@@ -414,13 +414,13 @@ class BasicFunctionalityTestCase(unittest.TestCase):
 
     def test_response_creation(self):
         app = flask.Flask(__name__)
-        @app.route('/unicode')
+        @app.url_map.route('/unicode')
         def from_unicode():
             return u'Hällo Wörld'
-        @app.route('/string')
+        @app.url_map.route('/string')
         def from_string():
             return u'Hällo Wörld'.encode('utf-8')
-        @app.route('/args')
+        @app.url_map.route('/args')
         def from_tuple():
             return 'Meh', 400, {'X-Foo': 'Testing'}, 'text/plain'
         c = app.test_client()
@@ -452,7 +452,7 @@ class BasicFunctionalityTestCase(unittest.TestCase):
 
     def test_url_generation(self):
         app = flask.Flask(__name__)
-        @app.route('/hello/<name>', methods=['POST'])
+        @app.url_map.route('/hello/<name>', methods=['POST'])
         def hello():
             pass
         with app.test_request_context():
@@ -470,7 +470,7 @@ class BasicFunctionalityTestCase(unittest.TestCase):
                 return ','.join(base_to_url(x) for x in value)
         app = flask.Flask(__name__)
         app.url_map.converters['list'] = ListConverter
-        @app.route('/<list:args>')
+        @app.url_map.route('/<list:args>')
         def index(args):
             return '|'.join(args)
         c = app.test_client()
@@ -487,7 +487,7 @@ class BasicFunctionalityTestCase(unittest.TestCase):
 
     def test_none_response(self):
         app = flask.Flask(__name__)
-        @app.route('/')
+        @app.url_map.route('/')
         def test():
             return None
         try:
@@ -508,10 +508,10 @@ class JSONTestCase(unittest.TestCase):
     def test_jsonify(self):
         d = dict(a=23, b=42, c=[1, 2, 3])
         app = flask.Flask(__name__)
-        @app.route('/kw')
+        @app.url_map.route('/kw')
         def return_kwargs():
             return flask.jsonify(**d)
-        @app.route('/dict')
+        @app.url_map.route('/dict')
         def return_dict():
             return flask.jsonify(d)
         c = app.test_client()
@@ -522,7 +522,7 @@ class JSONTestCase(unittest.TestCase):
 
     def test_json_attr(self):
         app = flask.Flask(__name__)
-        @app.route('/add', methods=['POST'])
+        @app.url_map.route('/add', methods=['POST'])
         def add():
             return unicode(flask.request.json['a'] + flask.request.json['b'])
         c = app.test_client()
@@ -546,7 +546,7 @@ class JSONTestCase(unittest.TestCase):
         app.request_class = ModifiedRequest
         app.url_map.charset = 'euc-kr'
 
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             return flask.request.args['foo']
 
@@ -562,7 +562,7 @@ class TemplatingTestCase(unittest.TestCase):
         @app.context_processor
         def context_processor():
             return {'injected_value': 42}
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             return flask.render_template('context_template.html', value=23)
         rv = app.test_client().get('/')
@@ -570,7 +570,7 @@ class TemplatingTestCase(unittest.TestCase):
 
     def test_original_win(self):
         app = flask.Flask(__name__)
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             return flask.render_template_string('{{ config }}', config=42)
         rv = app.test_client().get('/')
@@ -579,7 +579,7 @@ class TemplatingTestCase(unittest.TestCase):
     def test_standard_context(self):
         app = flask.Flask(__name__)
         app.secret_key = 'development key'
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             flask.g.foo = 23
             flask.session['test'] = 'aha'
@@ -595,7 +595,7 @@ class TemplatingTestCase(unittest.TestCase):
     def test_escaping(self):
         text = '<p>Hello World!'
         app = flask.Flask(__name__)
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             return flask.render_template('escaping_template.html', text=text,
                                          html=flask.Markup(text))
@@ -646,7 +646,7 @@ class TemplatingTestCase(unittest.TestCase):
         @app.template_filter()
         def super_reverse(s):
             return s[::-1]
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             return flask.render_template('template_filter.html', value='abcd')
         rv = app.test_client().get('/')
@@ -657,7 +657,7 @@ class TemplatingTestCase(unittest.TestCase):
         @app.template_filter('super_reverse')
         def my_reverse(s):
             return s[::-1]
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             return flask.render_template('template_filter.html', value='abcd')
         rv = app.test_client().get('/')
@@ -778,13 +778,13 @@ class LoggingTestCase(unittest.TestCase):
         app = flask.Flask(__name__)
         app.debug = True
 
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             app.logger.warning('the standard library is dead')
             app.logger.debug('this is a debug statement')
             return ''
 
-        @app.route('/exc')
+        @app.url_map.route('/exc')
         def exc():
             1/0
         c = app.test_client()
@@ -811,7 +811,7 @@ class LoggingTestCase(unittest.TestCase):
         app.logger_name = 'flask_tests/test_exception_logging'
         app.logger.addHandler(StreamHandler(out))
 
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             1/0
 
@@ -836,7 +836,7 @@ class LoggingTestCase(unittest.TestCase):
             if trigger == 'after':
                 1/0
             return response
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             return 'Foo'
         @app.errorhandler(500)
@@ -912,10 +912,10 @@ class SubdomainTestCase(unittest.TestCase):
     def test_basic_support(self):
         app = flask.Flask(__name__)
         app.config['SERVER_NAME'] = 'localhost'
-        @app.route('/')
+        @app.url_map.route('/')
         def normal_index():
             return 'normal index'
-        @app.route('/', subdomain='test')
+        @app.url_map.route('/', subdomain='test')
         def test_index():
             return 'test index'
 
@@ -929,7 +929,7 @@ class SubdomainTestCase(unittest.TestCase):
     def test_subdomain_matching(self):
         app = flask.Flask(__name__)
         app.config['SERVER_NAME'] = 'localhost'
-        @app.route('/', subdomain='<user>')
+        @app.url_map.route('/', subdomain='<user>')
         def index(user):
             return 'index for %s' % user
 
@@ -943,7 +943,7 @@ class TestSignals(unittest.TestCase):
     def test_template_rendered(self):
         app = flask.Flask(__name__)
 
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             return flask.render_template('simple_template.html', whiskey=42)
 
@@ -982,7 +982,7 @@ class TestSignals(unittest.TestCase):
             response.data = 'stuff'
             return response
 
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             calls.append('handler')
             return 'ignored anyway'
@@ -1005,7 +1005,7 @@ class TestSignals(unittest.TestCase):
         app = flask.Flask(__name__)
         recorded = []
 
-        @app.route('/')
+        @app.url_map.route('/')
         def index():
             1/0
 

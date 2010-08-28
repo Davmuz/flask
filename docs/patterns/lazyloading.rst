@@ -24,11 +24,11 @@ Imagine the current application looks somewhat like this::
     from flask import Flask
     app = Flask(__name__)
 
-    @app.route('/')
+    @app.url_map.route('/')
     def index():
         pass
 
-    @app.route('/user/<username>')
+    @app.url_map.route('/user/<username>')
     def user(username):
         pass
 

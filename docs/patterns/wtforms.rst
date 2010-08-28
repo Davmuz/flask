@@ -43,7 +43,7 @@ In the View
 
 In the view function, the usage of this form looks like this::
 
-    @app.route('/register', methods=['GET', 'POST'])
+    @app.url_map.route('/register', methods=['GET', 'POST'])
     def register():
         form = RegistrationForm(request.form)
         if request.method == 'POST' and form.validate():

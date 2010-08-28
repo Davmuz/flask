@@ -220,7 +220,7 @@ extension looks something like this::
 
 Either way you can use the database from the views like this::
 
-    @app.route('/')
+    @app.url_map.route('/')
     def show_all():
         cur = g.sqlite3_db.cursor()
         cur.execute(...)

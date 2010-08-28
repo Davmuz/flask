@@ -16,7 +16,7 @@ A minimal Flask application looks something like that::
     from flask import Flask
     app = Flask(__name__)
 
-    @app.route('/')
+    @app.url_map.route('/')
     def hello_world():
         return "Hello World!"
 
@@ -126,11 +126,11 @@ likely he will like the page and come back next time.
 As you have seen above, the :meth:`~flask.Flask.route` decorator is used
 to bind a function to a URL.  Here are some basic examples::
 
-    @app.route('/')
+    @app.url_map.route('/')
     def index():
         return 'Index Page'
 
-    @app.route('/hello')
+    @app.url_map.route('/hello')
     def hello():
         return 'Hello World'
 
@@ -145,12 +145,12 @@ To add variable parts to a URL you can mark these special sections as
 your function.  Optionally a converter can be specified by specifying a
 rule with ``<converter:variable_name>``.  Here are some nice examples::
 
-    @app.route('/user/<username>')
+    @app.url_map.route('/user/<username>')
     def show_user_profile(username):
         # show the user profile for that user
         pass
 
-    @app.route('/post/<int:post_id>')
+    @app.url_map.route('/post/<int:post_id>')
     def show_post(post_id):
         # show the post with the given id, the id is an integer
         pass
@@ -171,11 +171,11 @@ The following converters exist:
 
    Take these two rules::
 
-        @app.route('/projects/')
+        @app.url_map.route('/projects/')
         def projects():
             pass
 
-        @app.route('/about')
+        @app.url_map.route('/about')
         def about():
             pass
 
@@ -210,13 +210,13 @@ parameter.  Here are some examples:
 
 >>> from flask import Flask, url_for
 >>> app = Flask(__name__)
->>> @app.route('/')
+>>> @app.url_map.route('/')
 ... def index(): pass
 ...
->>> @app.route('/login')
+>>> @app.url_map.route('/login')
 ... def login(): pass
 ...
->>> @app.route('/user/<username>')
+>>> @app.url_map.route('/user/<username>')
 ... def profile(username): pass
 ...
 >>> with app.test_request_context():
@@ -256,7 +256,7 @@ to access URLs.  By default a route only answers to `GET` requests, but
 that can be changed by providing the `methods` argument to the
 :meth:`~flask.Flask.route` decorator.  Here are some examples::
 
-    @app.route('/login', methods=['GET', 'POST'])
+    @app.url_map.route('/login', methods=['GET', 'POST'])
     def login():
         if request.method == 'POST':
             do_the_login()
@@ -353,8 +353,8 @@ Here's a simple example of how to render a template::
 
     from flask import render_template
 
-    @app.route('/hello/')
-    @app.route('/hello/<name>')
+    @app.url_map.route('/hello/')
+    @app.url_map.route('/hello/<name>')
     def hello(name=None):
         return render_template('hello.html', name=name)
 
@@ -505,7 +505,7 @@ transmitted in a `POST` or `PUT` request) you can use the
 :attr:`~flask.request.form` attribute.  Here is a full example of the two
 attributes mentioned above::
 
-    @app.route('/login', methods=['POST', 'GET'])
+    @app.url_map.route('/login', methods=['POST', 'GET'])
     def login():
         error = None
         if request.method == 'POST':
@@ -554,7 +554,7 @@ that works::
 
     from flask import request
 
-    @app.route('/upload', methods=['GET', 'POST'])
+    @app.url_map.route('/upload', methods=['GET', 'POST'])
     def upload_file():
         if request.method == 'POST':
             f = request.files['the_file']
@@ -572,7 +572,7 @@ Werkzeug provides for you::
     from flask import request
     from werkzeug import secure_filename
 
-    @app.route('/upload', methods=['GET', 'POST'])
+    @app.url_map.route('/upload', methods=['GET', 'POST'])
     def upload_file():
         if request.method == 'POST':
             f = request.files['the_file']
@@ -600,11 +600,11 @@ code use the :func:`~flask.abort` function.  Here an example how this works::
 
     from flask import abort, redirect, url_for
 
-    @app.route('/')
+    @app.url_map.route('/')
     def index():
         return redirect(url_for('login'))
 
-    @app.route('/login')
+    @app.url_map.route('/login')
     def login():
         abort(401)
         this_is_never_executed()
@@ -646,13 +646,13 @@ sessions work::
 
     app = Flask(__name__)
 
-    @app.route('/')
+    @app.url_map.route('/')
     def index():
         if 'username' in session:
             return 'Logged in as %s' % escape(session['username'])
         return 'You are not logged in'
 
-    @app.route('/login', methods=['GET', 'POST'])
+    @app.url_map.route('/login', methods=['GET', 'POST'])
     def login():
         if request.method == 'POST':
             session['username'] = request.form['username']
@@ -664,7 +664,7 @@ sessions work::
             </form>
         '''
 
-    @app.route('/logout')
+    @app.url_map.route('/logout')
     def logout():
         # remove the username from the session if its there
         session.pop('username', None)

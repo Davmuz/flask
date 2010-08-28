@@ -70,7 +70,7 @@ And this is what `views.py` would look like::
 
     from yourapplication import app
 
-    @app.route('/')
+    @app.url_map.route('/')
     def index():
         return 'Hello World!'
 

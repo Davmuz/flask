@@ -20,7 +20,7 @@ interested in how to do that, check out the :ref:`easy-querying` example.
 The view function will pass the entries as dicts to the
 `show_entries.html` template and return the rendered one::
 
-    @app.route('/')
+    @app.url_map.route('/')
     def show_entries():
         cur = g.db.execute('select title, text from entries order by id desc')
         entries = [dict(title=row[0], text=row[1]) for row in cur.fetchall()]
@@ -35,7 +35,7 @@ responds to `POST` requests, the actual form is shown on the
 :func:`~flask.flash` an information message to the next request and
 redirect back to the `show_entries` page::
 
-    @app.route('/add', methods=['POST'])
+    @app.url_map.route('/add', methods=['POST'])
     def add_entry():
         if not session.get('logged_in'):
             abort(401)
@@ -66,7 +66,7 @@ page.  In addition, a message is flashed that informs the user that he or
 she was logged in successfully.  If an error occurred, the template is
 notified about that, and the user is asked again::
 
-    @app.route('/login', methods=['GET', 'POST'])
+    @app.url_map.route('/login', methods=['GET', 'POST'])
     def login():
         error = None
         if request.method == 'POST':
@@ -89,7 +89,7 @@ if the user was logged in.
 
 ::
 
-    @app.route('/logout')
+    @app.url_map.route('/logout')
     def logout():
         session.pop('logged_in', None)
         flash('You were logged out')

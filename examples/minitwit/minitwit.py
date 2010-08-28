@@ -89,7 +89,7 @@ def after_request(response):
     return response
 
 
-@app.route('/')
+@app.url_map.route('/')
 def timeline():
     """Shows a users timeline or if no user is logged in it will
     redirect to the public timeline.  This timeline shows the user's
@@ -107,7 +107,7 @@ def timeline():
         [session['user_id'], session['user_id'], PER_PAGE]))
 
 
-@app.route('/public')
+@app.url_map.route('/public')
 def public_timeline():
     """Displays the latest messages of all users."""
     return render_template('timeline.html', messages=query_db('''
@@ -116,7 +116,7 @@ def public_timeline():
         order by message.pub_date desc limit ?''', [PER_PAGE]))
 
 
-@app.route('/<username>')
+@app.url_map.route('/<username>')
 def user_timeline(username):
     """Display's a users tweets."""
     profile_user = query_db('select * from user where username = ?',
@@ -137,7 +137,7 @@ def user_timeline(username):
             profile_user=profile_user)
 
 
-@app.route('/<username>/follow')
+@app.url_map.route('/<username>/follow')
 def follow_user(username):
     """Adds the current user as follower of the given user."""
     if not g.user:
@@ -152,7 +152,7 @@ def follow_user(username):
     return redirect(url_for('user_timeline', username=username))
 
 
-@app.route('/<username>/unfollow')
+@app.url_map.route('/<username>/unfollow')
 def unfollow_user(username):
     """Removes the current user as follower of the given user."""
     if not g.user:
@@ -167,7 +167,7 @@ def unfollow_user(username):
     return redirect(url_for('user_timeline', username=username))
 
 
-@app.route('/add_message', methods=['POST'])
+@app.url_map.route('/add_message', methods=['POST'])
 def add_message():
     """Registers a new message for the user."""
     if 'user_id' not in session:
@@ -181,7 +181,7 @@ def add_message():
     return redirect(url_for('timeline'))
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.url_map.route('/login', methods=['GET', 'POST'])
 def login():
     """Logs the user in."""
     if g.user:
@@ -202,7 +202,7 @@ def login():
     return render_template('login.html', error=error)
 
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.url_map.route('/register', methods=['GET', 'POST'])
 def register():
     """Registers the user."""
     if g.user:
@@ -231,7 +231,7 @@ def register():
     return render_template('register.html', error=error)
 
 
-@app.route('/logout')
+@app.url_map.route('/logout')
 def logout():
     """Logs the user out."""
     flash('You were logged out')

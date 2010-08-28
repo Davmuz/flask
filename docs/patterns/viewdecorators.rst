@@ -41,7 +41,7 @@ So how would you use that decorator now?  Apply it as innermost decorator
 to a view function.  When applying further decorators, always remember
 that the :meth:`~flask.Flask.route` decorator is the outermost::
 
-    @app.route('/secret_page')
+    @app.url_map.route('/secret_page')
     @login_required
     def secret_page():
         pass
@@ -102,16 +102,16 @@ dictionary with the values passed to the template from the view function
 and the template is automatically rendered.  With that, the following
 three examples do exactly the same::
 
-    @app.route('/')
+    @app.url_map.route('/')
     def index():
         return render_template('index.html', value=42)
 
-    @app.route('/')
+    @app.url_map.route('/')
     @templated('index.html')
     def index():
         return dict(value=42)
 
-    @app.route('/')
+    @app.url_map.route('/')
     @templated()
     def index():
         return dict(value=42)

@@ -18,11 +18,11 @@ So here is a full example::
 
     from flask import flash, redirect, url_for, render_template
 
-    @app.route('/')
+    @app.url_map.route('/')
     def index():
         return render_template('index.html')
 
-    @app.route('/login', methods=['GET', 'POST'])
+    @app.url_map.route('/login', methods=['GET', 'POST'])
     def login():
         error = None
         if request.method == 'POST':

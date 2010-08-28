@@ -52,7 +52,7 @@ the file and redirects the user to the URL for the uploaded file::
         return '.' in filename and \
                filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
-    @app.route('/', methods=['GET', 'POST'])
+    @app.url_map.route('/', methods=['GET', 'POST'])
     def upload_file():
         if request.method == 'POST':
             file = request.files['file']
@@ -103,7 +103,7 @@ Flask 0.5 we can use a function that does that for us::
 
     from flask import send_from_directory
 
-    @app.route('/uploads/<filename>')
+    @app.url_map.route('/uploads/<filename>')
     def uploaded_file(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'],
                                    filename)

@@ -13,7 +13,7 @@ Flask is Fun
     from flask import Flask
     app = Flask(__name__)
 
-    @app.route("/")
+    @app.url_map.route("/")
     def hello():
         return "Hello World!"
 

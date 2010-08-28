@@ -23,7 +23,7 @@ Without such an explicit application object the following code::
     from flask import Flask
     app = Flask(__name__)
 
-    @app.route('/')
+    @app.url_map.route('/')
     def index():
         return 'Hello World!'
 

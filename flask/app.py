@@ -18,13 +18,12 @@ from itertools import chain
 from jinja2 import Environment
 
 from werkzeug import ImmutableDict, import_string
-from werkzeug.routing import Map
 from werkzeug.exceptions import HTTPException, InternalServerError, \
      MethodNotAllowed
 
 from .helpers import _PackageBoundObject, url_for, get_flashed_messages, \
     _tojson_filter, _endpoint_from_view_func
-from .wrappers import Request, Response, Rule
+from .wrappers import Request, Response, Map, Rule
 from .config import ConfigAttribute, Config
 from .ctx import _RequestContext
 from .globals import _request_ctx_stack, request
@@ -436,79 +435,6 @@ class Flask(_PackageBoundObject):
             domain = '.' + self.config['SERVER_NAME']
         session.save_cookie(response, self.session_cookie_name,
                             expires=expires, httponly=True, domain=domain)
-        
-    def route(self, rule, **options):
-        """A decorator that is used to register a view function for a
-        given URL rule.  Example::
-
-            @app.route('/')
-            def index():
-                return 'Hello World'
-
-        Variables parts in the route can be specified with angular
-        brackets (``/user/<username>``).  By default a variable part
-        in the URL accepts any string without a slash however a different
-        converter can be specified as well by using ``<converter:name>``.
-
-        Variable parts are passed to the view function as keyword
-        arguments.
-
-        The following converters are possible:
-
-        =========== ===========================================
-        `int`       accepts integers
-        `float`     like `int` but for floating point values
-        `path`      like the default but also accepts slashes
-        =========== ===========================================
-
-        Here some examples::
-
-            @app.route('/')
-            def index():
-                pass
-
-            @app.route('/<username>')
-            def show_user(username):
-                pass
-
-            @app.route('/post/<int:post_id>')
-            def show_post(post_id):
-                pass
-
-        An important detail to keep in mind is how Flask deals with trailing
-        slashes.  The idea is to keep each URL unique so the following rules
-        apply:
-
-        1. If a rule ends with a slash and is requested without a slash
-           by the user, the user is automatically redirected to the same
-           page with a trailing slash attached.
-        2. If a rule does not end with a trailing slash and the user request
-           the page with a trailing slash, a 404 not found is raised.
-
-        This is consistent with how web servers deal with static files.  This
-        also makes it possible to use relative link targets safely.
-
-        The :meth:`route` decorator accepts a couple of other arguments
-        as well:
-
-        :param rule: the URL rule as string
-        :param methods: a list of methods this rule should be limited
-                        to (`GET`, `POST` etc.).  By default a rule
-                        just listens for `GET` (and implicitly `HEAD`).
-                        Starting with Flask 0.6, `OPTIONS` is implicitly
-                        added and handled by the standard request handling.
-        :param subdomain: specifies the rule for the subdomain in case
-                          subdomain matching is in use.
-        :param strict_slashes: can be used to disable the strict slashes
-                               setting for this rule.  See above.
-        :param options: other options to be forwarded to the underlying
-                        :class:`~werkzeug.routing.Rule` object.
-        """
-        def decorator(function):
-            options['endpoint'] = function
-            self.url_map.add(Rule(rule, **options))
-            return function
-        return decorator
 
     def errorhandler(self, code):
         """A decorator that is used to register a function give a given
