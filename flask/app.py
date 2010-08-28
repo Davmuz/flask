@@ -210,12 +210,6 @@ class Flask(_PackageBoundObject):
         self._logger = None
         self.logger_name = self.import_name
 
-        #: A dictionary of all view functions registered.  The keys will
-        #: be function names which are also used to generate URLs and
-        #: the values are the function objects themselves.
-        #: To register a view function, use the :meth:`route` decorator.
-        self.view_functions = {}
-
         #: A dictionary of all registered error handlers.  The key is
         #: be the error code as integer, the value the function that
         #: should handle that error.
@@ -542,12 +536,6 @@ class Flask(_PackageBoundObject):
                 return self.make_default_options_response()
             # otherwise dispatch to the handler for that endpoint
             return rule.view_func(**req.view_args)
-            #if callable(rule.endpoint):
-                #return rule.endpoint(**req.view_args)
-            #else:
-                #if rule.endpoint not in self.view_functions: # cache
-                    #self.view_functions[rule.endpoint] = import_string(rule.endpoint)
-                #return self.view_functions[rule.endpoint](**req.view_args)
         except HTTPException, e:
             return self.handle_http_exception(e)
 
