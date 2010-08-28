@@ -266,7 +266,7 @@ class Flask(_PackageBoundObject):
         # but also because google appengine stores static files somewhere
         # else when mapped with the .yml file.
         self.url_map.add(Rule(self.static_path + '/<path:filename>',
-                          endpoint=self.send_static_file))
+                          view_func=self.send_static_file, endpoint='static'))
 
         #: The Jinja2 environment.  It is created from the
         #: :attr:`jinja_options`.
