@@ -107,7 +107,10 @@ class Flask(object):
     #:
     #: This is the default used for application and modules unless a
     #: different value is passed to the constructor.
-    static_path = '/static'
+    static_path = ConfigAttribute('STATIC_PATH')
+    
+    #: Where is the static directory located?
+    static_root = ConfigAttribute('STATIC_ROOT')
 
     #: The debug flag.  Set this to `True` to enable debugging of the
     #: application.  In debug mode the debugger will kick in when an unhandled
@@ -193,10 +196,12 @@ class Flask(object):
         'USE_X_SENDFILE':                       False,
         'LOGGER_NAME':                          None,
         'SERVER_NAME':                          None,
-        'MAX_CONTENT_LENGTH':                   None
+        'MAX_CONTENT_LENGTH':                   None,
+        'STATIC_PATH':                          '/static',
+        'STATIC_ROOT':                          'static'
     })
 
-    def __init__(self, import_name, static_path=None):
+    def __init__(self, import_name):
         #: The name of the package or module.  Do not change this once
         #: it was set by the constructor.
         self.import_name = import_name
@@ -204,12 +209,6 @@ class Flask(object):
         #: Where is the app root located?
         self.root_path = _get_package_path(self.import_name)
         
-        #: Where is the static directory located?
-        self.static_root = 'static'
-        
-        if static_path is not None:
-            self.static_path = static_path
-
         #: The configuration dictionary as :class:`Config`.  This behaves
         #: exactly like a regular dictionary but supports additional methods
         #: to load a config from files.
