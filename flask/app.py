@@ -22,8 +22,8 @@ from werkzeug import ImmutableDict, import_string
 from werkzeug.exceptions import HTTPException, InternalServerError, \
      MethodNotAllowed
 
-from .helpers import _PackageBoundObject, url_for, get_flashed_messages, \
-    _tojson_filter, _endpoint_from_view_func
+from .helpers import url_for, get_flashed_messages, _tojson_filter, \
+     _endpoint_from_view_func, _get_package_path, send_from_directory
 from .wrappers import Request, Response, Map, Rule
 from .config import ConfigAttribute, Config
 from .ctx import _RequestContext
@@ -36,7 +36,7 @@ from .signals import request_started, request_finished, got_request_exception
 _logger_lock = Lock()
 
 
-class Flask(_PackageBoundObject):
+class Flask(object):
     """The flask object implements a WSGI application and acts as the central
     object.  It is passed the name of the module or package of the
     application.  Once it is created it will act as a central registry for
@@ -197,7 +197,16 @@ class Flask(_PackageBoundObject):
     })
 
     def __init__(self, import_name, static_path=None):
-        _PackageBoundObject.__init__(self, import_name)
+        #: The name of the package or module.  Do not change this once
+        #: it was set by the constructor.
+        self.import_name = import_name
+
+        #: Where is the app root located?
+        self.root_path = _get_package_path(self.import_name)
+        
+        #: Where is the static directory located?
+        self.static_root = 'static'
+        
         if static_path is not None:
             self.static_path = static_path
 
@@ -272,6 +281,56 @@ class Flask(_PackageBoundObject):
         #: :attr:`jinja_options`.
         self.jinja_env = self.create_jinja_environment()
         self.init_jinja_globals()
+        
+    def get_static_root(self):
+        """Generate the path to the static directory.
+        If the path is 
+        """
+        if os.path.isabs(self.static_root):
+            return self.static_root
+        else:
+            return os.path.join(self.root_path, self.static_root)
+
+    @property
+    def has_static_folder(self):
+        """This is `True` if the package bound object's container has a
+        folder named ``'static'``.
+
+        .. versionadded:: 0.5
+        """
+        return os.path.isdir(self.get_static_root())
+
+    def send_static_file(self, filename):
+        """Function used internally to send static files from the static
+        folder to the browser.
+
+        .. versionadded:: 0.5
+        """
+        return send_from_directory(self.get_static_root(), filename)
+
+    def open_resource(self, resource):
+        """Opens a resource from the application's resource folder.  To see
+        how this works, consider the following folder structure::
+
+            /myapplication.py
+            /schemal.sql
+            /static
+                /style.css
+            /templates
+                /layout.html
+                /index.html
+
+        If you want to open the `schema.sql` file you would do the
+        following::
+
+            with app.open_resource('schema.sql') as f:
+                contents = f.read()
+                do_something_with(contents)
+
+        :param resource: the name of the resource.  To access resources within
+                         subfolders use forward slashes as separator.
+        """
+        return open(os.path.join(self.root_path, resource), 'rb')
 
     @property
     def logger(self):
