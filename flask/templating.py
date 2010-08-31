@@ -9,7 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 import posixpath
-from jinja2 import BaseLoader, TemplateNotFound
 
 from .globals import _request_ctx_stack
 from .signals import template_rendered
