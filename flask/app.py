@@ -201,7 +201,7 @@ class Flask(object):
         'STATIC_ROOT':                          'static'
     })
 
-    def __init__(self, import_name):
+    def __init__(self, import_name, config=None):
         #: The name of the package or module.  Do not change this once
         #: it was set by the constructor.
         self.import_name = import_name
@@ -213,6 +213,11 @@ class Flask(object):
         #: exactly like a regular dictionary but supports additional methods
         #: to load a config from files.
         self.config = Config(self.root_path, self.default_config)
+        if config:
+            if isinstance(config, basestring) and config.isupper():
+                self.config.from_envvar(config)
+            else:
+                self.config.from_object(config)
 
         #: Prepare the deferred setup of the logger.
         self._logger = None
