@@ -11,11 +11,12 @@
 
 from __future__ import with_statement
 
+import os
 from threading import Lock
 from datetime import timedelta, datetime
 from itertools import chain
 
-from jinja2 import Environment
+from jinja2 import Environment, FileSystemLoader
 
 from werkzeug import ImmutableDict, import_string
 from werkzeug.exceptions import HTTPException, InternalServerError, \
@@ -28,8 +29,7 @@ from .config import ConfigAttribute, Config
 from .ctx import _RequestContext
 from .globals import _request_ctx_stack, request
 from .session import Session, _NullSession
-from .templating import _DispatchingJinjaLoader, \
-    _default_template_ctx_processor
+from .templating import _default_template_ctx_processor
 from .signals import request_started, request_finished, got_request_exception
 
 # a lock used for logger initialization
@@ -304,7 +304,7 @@ class Flask(_PackageBoundObject):
         options = dict(self.jinja_options)
         if 'autoescape' not in options:
             options['autoescape'] = self.select_jinja_autoescape
-        return Environment(loader=_DispatchingJinjaLoader(self), **options)
+        return Environment(loader=FileSystemLoader(os.path.join(self.root_path, 'templates')), **options)
 
     def init_jinja_globals(self):
         """Called directly after the environment was created to inject

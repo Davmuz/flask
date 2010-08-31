@@ -27,37 +27,6 @@ def _default_template_ctx_processor():
         g=reqctx.g
     )
 
-
-class _DispatchingJinjaLoader(BaseLoader):
-    """A loader that looks for templates in all the given folders.
-    """
-
-    def __init__(self, app):
-        self.app = app
-
-    def get_source(self, environment, template):
-        template = posixpath.normpath(template)
-        if template.startswith('../'):
-            raise TemplateNotFound(template)
-        loader = None
-        # if there was a module and it has a loader, try this first
-        if loader is not None:
-            try:
-                return loader.get_source(environment, name)
-            except TemplateNotFound:
-                pass
-        # fall back to application loader if module failed
-        return self.app.jinja_loader.get_source(environment, template)
-
-    def list_templates(self):
-        result = self.app.jinja_loader.list_templates()
-        for name, module in self.app.modules.iteritems():
-            if module.jinja_loader is not None:
-                for template in module.jinja_loader.list_templates():
-                    result.append('%s/%s' % (name, template))
-        return result
-
-
 def _render(template, context, app):
     """Renders the template and fires the signal"""
     rv = template.render(context)
