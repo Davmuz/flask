@@ -225,6 +225,8 @@ class Flask(object):
         if config:
             if isinstance(config, basestring) and config.isupper():
                 self.config.from_envvar(config)
+            elif isinstance(config, dict):
+                self.config.update(config)
             else:
                 self.config.from_object(config)
 
