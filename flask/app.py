@@ -16,7 +16,7 @@ from threading import Lock
 from datetime import timedelta, datetime
 from itertools import chain
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, ChoiceLoader, PackageLoader
 
 from werkzeug import ImmutableDict, import_string
 from werkzeug.exceptions import HTTPException, InternalServerError, \
@@ -153,6 +153,14 @@ class Flask(object):
     #: ``timedelta(days=31)``
     permanent_session_lifetime = ConfigAttribute('PERMANENT_SESSION_LIFETIME')
 
+    #: A tuple with two optional inner tuples which is used to load the
+    #: templates. The first inner tuple if for the direct paths to the
+    #: templates, the second is for the packages.
+    #: The direct paths can be absolute or relative. The packages are the names,
+    #: the templates have to be stored in their respective 'templates'
+    #: directories.
+    templates = ConfigAttribute('TEMPLATES')
+
     #: Enable this if you want to use the X-Sendfile feature.  Keep in
     #: mind that the server has to support this.  This only affects files
     #: sent with the :func:`send_file` method.
@@ -198,7 +206,8 @@ class Flask(object):
         'SERVER_NAME':                          None,
         'MAX_CONTENT_LENGTH':                   None,
         'STATIC_PATH':                          '/static',
-        'STATIC_ROOT':                          'static'
+        'STATIC_ROOT':                          'static',
+        'TEMPLATES':                            tuple()
     })
 
     def __init__(self, import_name, config=None):
@@ -367,7 +376,20 @@ class Flask(object):
         options = dict(self.jinja_options)
         if 'autoescape' not in options:
             options['autoescape'] = self.select_jinja_autoescape
-        return Environment(loader=FileSystemLoader(os.path.join(self.root_path, 'templates')), **options)
+        loaders = [FileSystemLoader(os.path.join(self.root_path, 'templates'))]
+        # Create loaders from the first item of TEMPLATES config (direct paths).
+        if self.templates:
+            for direct_path in self.templates[0]:
+                if os.path.isabs(direct_path):
+                    loaders.append(FileSystemLoader(direct_path))
+                else:
+                    loaders.append(FileSystemLoader(
+                        os.path.join(self.root_path, direct_path)
+                    ))
+            # Create loaders from the second item of TEMPLATES config (packages).
+            if len(self.templates) > 1:
+                loaders += [PackageLoader(x) for x in self.templates[1]]
+        return Environment(loader=ChoiceLoader(loaders), **options)
 
     def init_jinja_globals(self):
         """Called directly after the environment was created to inject
