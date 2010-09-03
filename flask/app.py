@@ -120,6 +120,10 @@ class Flask(object):
     #: This attribute can also be configured from the config with the `DEBUG`
     #: configuration key.  Defaults to `False`.
     debug = ConfigAttribute('DEBUG')
+    
+    #: The hostname to listen on.  set this to ``'0.0.0.0'`` to have the server
+    #: available externally as well.
+    host = ConfigAttribute('HOST')
 
     #: The testing flask.  Set this to `True` to enable the test mode of
     #: Flask extensions (and in the future probably also Flask itself).
@@ -152,6 +156,9 @@ class Flask(object):
     #: `PERMANENT_SESSION_LIFETIME` configuration key.  Defaults to
     #: ``timedelta(days=31)``
     permanent_session_lifetime = ConfigAttribute('PERMANENT_SESSION_LIFETIME')
+    
+    #: The port of the webserver.
+    port = ConfigAttribute('PORT')
 
     #: A tuple with two optional inner tuples which is used to load the
     #: templates. The first inner tuple if for the direct paths to the
@@ -197,6 +204,7 @@ class Flask(object):
     #: Default configuration parameters.
     default_config = ImmutableDict({
         'DEBUG':                                False,
+        'HOST':                                 '127.0.0.1',
         'TESTING':                              False,
         'SECRET_KEY':                           None,
         'SESSION_COOKIE_NAME':                  'session',
@@ -205,6 +213,7 @@ class Flask(object):
         'LOGGER_NAME':                          None,
         'SERVER_NAME':                          None,
         'MAX_CONTENT_LENGTH':                   None,
+        'PORT':                                 5000,
         'STATIC_PATH':                          '/static',
         'STATIC_ROOT':                          'static',
         'TEMPLATES':                            tuple()
@@ -436,7 +445,7 @@ class Flask(object):
         # existing views.
         context.update(orig_ctx)
 
-    def run(self, host='127.0.0.1', port=5000, **options):
+    def run(self, host=None, port=None, **options):
         """Runs the application on a local development server.  If the
         :attr:`debug` flag is set the server will automatically reload
         for code changes and show a debugger in case an exception happened.
@@ -468,7 +477,7 @@ class Flask(object):
             self.debug = options.pop('debug')
         options.setdefault('use_reloader', self.debug)
         options.setdefault('use_debugger', self.debug)
-        return run_simple(host, port, self, **options)
+        return run_simple(host or self.host, port or self.port, self, **options)
 
     def test_client(self):
         """Creates a test client for this application.  For information
